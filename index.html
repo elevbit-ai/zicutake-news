@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zicutake News Live — Global Intelligence · Real-time</title>
+  <meta name="description" content="Zicutake News Live: notícias em tempo real, mercados, crypto, Wikipedia e tendências. Ecossistema Zicutake · Elevbit · OpS · Joaquim Pedro de Morais Filho." />
+  <meta name="author" content="Joaquim Pedro de Morais Filho · Zicutake" />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta property="og:title" content="Zicutake News Live — Real-time Global Intelligence" />
+  <meta property="og:description" content="Breaking news, markets, crypto, encyclopedia and trends — live." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://elevbit-ai.github.io/zicutake-news/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+          colors: {
+            dark: { 900: '#0b0f19', 800: '#111827', 700: '#1f2937', 600: '#374151' },
+            brand: { 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb' },
+            z: { green: '#00ff9d', gdim: '#00c475' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      background-image:
+        radial-gradient(at 0% 0%, rgba(59,130,246,.15) 0, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(139,92,246,.1) 0, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(0,255,157,.06) 0, transparent 45%);
+      background-attachment: fixed;
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      color: #f3f4f6;
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+    .glass {
+      background: rgba(17,24,39,.72);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .glass-card {
+      background: rgba(31,41,55,.4);
+      border: 1px solid rgba(255,255,255,.04);
+      transition: .25s ease;
+    }
+    .glass-card:hover {
+      background: rgba(31,41,55,.65);
+      border-color: rgba(59,130,246,.35);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px -12px rgba(0,0,0,.55);
+    }
+    .ticker-wrap { overflow: hidden; white-space: nowrap; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .ticker {
+      display: inline-block;
+      animation: ticker-scroll 45s linear infinite;
+      padding: .55rem 0;
+    }
+    .ticker:hover { animation-play-state: paused; }
+    .ticker-item { display: inline-block; padding: 0 1.75rem; font-size: .82rem; color: #9ca3af; }
+    .ticker-item strong { color: #f3f4f6; }
+    .up { color: #10b981; }
+    .down { color: #ef4444; }
+    @keyframes ticker-scroll {
+      0% { transform: translate3d(0,0,0); }
+      100% { transform: translate3d(-50%,0,0); }
+    }
+    .loader-line { height: 3px; width: 100%; overflow: hidden; background: #1f2937; border-radius: 20px; position: relative; }
+    .loader-line::before {
+      content: ""; position: absolute; left: -40%; width: 40%; height: 100%;
+      background: linear-gradient(90deg, transparent, #3b82f6, #00ff9d, transparent);
+      animation: loading 1.4s linear infinite;
+    }
+    @keyframes loading {
+      0% { left: -40%; }
+      100% { left: 100%; }
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #00ff9d;
+      box-shadow: 0 0 10px #00ff9d; animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .45; transform: scale(.85); }
+    }
+    .cat-btn.active {
+      background: #3b82f6;
+      color: #fff;
+      border-color: #3b82f6;
+    }
+    .news-img {
+      width: 100%; height: 140px; object-fit: cover; border-radius: .75rem;
+      background: #1f2937;
+    }
+    #wiki-body a { color: #60a5fa; text-decoration: underline; }
+    .fade-in { animation: fadeIn .35s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Currency / markets ticker -->
+  <div class="ticker-wrap glass sticky top-0 z-40">
+    <div class="ticker" id="market-ticker">
+      <span class="ticker-item">ZICUTAKE MARKETS · loading…</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="glass border-b border-white/5 sticky top-[38px] z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-400 flex items-center justify-center font-extrabold text-dark-900 text-sm">Z</div>
+        <div>
+          <div class="font-extrabold tracking-tight text-lg leading-tight">Zicutake <span class="text-brand-400">News Live</span></div>
+          <div class="text-xs text-gray-400 flex items-center gap-2">
+            <span class="live-dot inline-block"></span>
+            <span id="status-line">Connecting to live feeds…</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="btn-refresh" class="px-3 py-1.5 rounded-full text-sm font-semibold border border-white/10 hover:border-brand-500 hover:text-brand-400 transition">
+          <i class="fas fa-rotate mr-1"></i> Atualizar
+        </button>
+        <button id="btn-lang" class="px-3 py-1.5 rounded-full text-sm font-bold border border-white/10 hover:bg-white/5">PT / EN</button>
+        <a href="https://elevbit-ai.github.io/" class="px-3 py-1.5 rounded-full text-sm font-semibold bg-brand-600 hover:bg-brand-500 transition">Portfólio</a>
+        <a href="https://www.usacomment.com/" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-full text-sm font-semibold border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10">USAcomment</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <!-- Hero + search -->
+    <section class="grid lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 glass rounded-2xl p-5 md:p-6">
+        <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-widest mb-2">
+          <i class="fas fa-bolt"></i> Real-time intelligence
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight mb-2" id="hero-title">
+          Notícias globais em tempo real
+        </h1>
+        <p class="text-gray-400 text-sm md:text-base mb-4" id="hero-sub">
+          Ecossistema Zicutake · feeds ao vivo · mercados · Wikipedia · tendências. Criado por Joaquim Pedro de Morais Filho.
+        </p>
+        <form id="search-form" class="flex flex-col sm:flex-row gap-2">
+          <input id="search-input" type="search" placeholder="Buscar notícias, tópicos ou Wikipedia…"
+            class="flex-1 rounded-xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-brand-500 text-sm" />
+          <button type="submit" class="rounded-xl bg-brand-600 hover:bg-brand-500 px-5 py-3 font-bold text-sm">
+            <i class="fas fa-search mr-1"></i> Buscar
+          </button>
+        </form>
+        <div class="flex flex-wrap gap-2 mt-4" id="category-bar">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-sm uppercase tracking-wider text-gray-300"><i class="fas fa-chart-line text-emerald-400 mr-2"></i>Mercados</h2>
+          <span class="text-[10px] text-gray-500" id="market-updated">—</span>
+        </div>
+        <div id="market-cards" class="space-y-2 text-sm">
+          <div class="loader-line"></div>
+        </div>
+        <div class="pt-2 border-t border-white/5">
+          <h3 class="font-bold text-sm text-gray-300 mb-2"><i class="fab fa-bitcoin text-amber-400 mr-2"></i>Crypto</h3>
+          <div id="crypto-cards" class="space-y-2 text-sm">
+            <div class="loader-line"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Breaking strip -->
+    <section class="glass rounded-2xl p-4 flex flex-wrap items-center gap-3">
+      <span class="px-2.5 py-1 rounded-md bg-red-600 text-xs font-extrabold tracking-wide">AO VIVO</span>
+      <div id="breaking-line" class="text-sm text-gray-200 flex-1 min-w-[200px]">Carregando manchetes…</div>
+      <span class="text-xs text-gray-500" id="clock"></span>
+    </section>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+      <!-- News feed -->
+      <section class="lg:col-span-2 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-extrabold text-xl" id="feed-title">Feed de notícias</h2>
+          <span class="text-xs text-gray-500" id="feed-count"></span>
+        </div>
+        <div id="news-loading" class="loader-line"></div>
+        <div id="news-grid" class="grid sm:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- Sidebar -->
+      <aside class="space-y-4">
+        <!-- Trends -->
+        <div class="glass rounded-2xl p-4">
+          <h2 class="font-bold mb-3 flex items-center gap-2">
+            <i class="fas fa-fire text-orange-400"></i> Tendências
+          </h2>
+          <ul id="trends-list" class="space-y-2 text-sm"></ul>
+        </div>
+
+        <!-- Wikipedia -->
+        <div class="glass rounded-2xl p-4">
+          <h2 class="font-bold mb-3 flex items-center gap-2">
+            <i class="fab fa-wikipedia-w text-gray-300"></i> Wikipedia
+          </h2>
+          <form id="wiki-form" class="flex gap-2 mb-3">
+            <input id="wiki-input" class="flex-1 rounded-lg bg-black/40 border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand-500" placeholder="Artigo / termo" />
+            <button class="px-3 rounded-lg bg-white/10 hover:bg-white/15 text-sm font-bold">OK</button>
+          </form>
+          <div id="wiki-panel" class="text-sm text-gray-300 space-y-2">
+            <p class="text-gray-500 text-xs">Pesquise qualquer tema da enciclopédia.</p>
+          </div>
+        </div>
+
+        <!-- PowerShell AI commands -->
+        <div class="glass rounded-2xl p-4 border border-emerald-500/20">
+          <h2 class="font-bold mb-2 flex items-center gap-2 text-emerald-300">
+            <i class="fas fa-terminal"></i> PowerShell · IA News
+          </h2>
+          <p class="text-xs text-gray-400 mb-3">Comandos do ecossistema Zicutake no PC:</p>
+          <pre class="text-[11px] leading-relaxed bg-black/50 rounded-xl p-3 overflow-x-auto text-emerald-200/90 border border-emerald-500/10"><code>Import-Module .\Zicutake-News.psm1
+
+Get-ZicutakeNews -Category World
+Get-ZicutakeNews -Category Tech -Top 10
+Get-ZicutakeMarkets
+Get-ZicutakeCrypto
+Get-ZicutakeWiki -Query "Brazil"
+Watch-ZicutakeNews -Seconds 60</code></pre>
+          <a href="./Zicutake-News.psm1" class="inline-block mt-3 text-xs font-bold text-emerald-400 hover:underline">Baixar módulo .psm1 →</a>
+        </div>
+
+        <!-- Ecosystem links -->
+        <div class="glass rounded-2xl p-4">
+          <h2 class="font-bold mb-3">Ecossistema</h2>
+          <div class="space-y-2 text-sm">
+            <a class="block glass-card rounded-xl px-3 py-2" href="https://elevbit-ai.github.io/" target="_blank" rel="noopener">Portfólio OpS / Elevbit</a>
+            <a class="block glass-card rounded-xl px-3 py-2" href="https://github.com/elevbit-ai/zicutake-browser" target="_blank" rel="noopener">Zicutake Browser (código)</a>
+            <a class="block glass-card rounded-xl px-3 py-2" href="https://github.com/elevbit-ai/zicutake-news" target="_blank" rel="noopener">Este projeto no GitHub</a>
+            <a class="block glass-card rounded-xl px-3 py-2" href="https://www.usacomment.com/" target="_blank" rel="noopener">USAcomment.com</a>
+            <a class="block glass-card rounded-xl px-3 py-2" href="https://02.quest" target="_blank" rel="noopener">02.quest</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="border-t border-white/5 mt-10 py-8 text-center text-sm text-gray-500">
+    <p>© 2026 <strong class="text-gray-300">Joaquim Pedro de Morais Filho</strong> · Zicutake News Live · Elevbit / OpS</p>
+    <p class="mt-1 text-xs">Feeds públicos (Google News RSS, Frankfurter, CoinGecko, Wikipedia). Atualização automática a cada 90s.</p>
+    <p class="mt-2"><a class="text-brand-400 hover:underline" href="mailto:zicutake@mail.ru">zicutake@mail.ru</a></p>
+  </footer>
+
+  <script>
+  (function () {
+    const LANG = { pt: 'pt-BR', en: 'en-US' };
+    let lang = 'pt';
+    let currentCat = 'world';
+    let refreshTimer = null;
+
+    const CATS = [
+      { id: 'world', pt: 'Mundo', en: 'World', rss: {
+        pt: 'https://news.google.com/rss?hl=pt-BR&gl=BR&ceid=BR:pt-419',
+        en: 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en'
+      }},
+      { id: 'usa', pt: 'EUA', en: 'USA', rss: {
+        pt: 'https://news.google.com/rss/search?q=Estados+Unidos&hl=pt-BR&gl=BR&ceid=BR:pt-419',
+        en: 'https://news.google.com/rss/search?q=United+States&hl=en-US&gl=US&ceid=US:en'
+      }},
+      { id: 'tech', pt: 'Tecnologia', en: 'Tech', rss: {
+        pt: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtdHZHZ0pMVWlnQVAB?hl=pt-BR&gl=BR&ceid=BR:pt-419',
+        en: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US:en'
+      }},
+      { id: 'business', pt: 'Economia', en: 'Business', rss: {
+        pt: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtdHZHZ0pMVWlnQVAB?hl=pt-BR&gl=BR&ceid=BR:pt-419',
+        en: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US:en'
+      }},
+      { id: 'crypto', pt: 'Crypto', en: 'Crypto', rss: {
+        pt: 'https://news.google.com/rss/search?q=bitcoin+OR+crypto&hl=pt-BR&gl=BR&ceid=BR:pt-419',
+        en: 'https://news.google.com/rss/search?q=bitcoin+OR+cryptocurrency&hl=en-US&gl=US&ceid=US:en'
+      }},
+      { id: 'science', pt: 'Ciência', en: 'Science', rss: {
+        pt: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp0Y1RjU0FtdHZHZ0pMVWlnQVAB?hl=pt-BR&gl=BR&ceid=BR:pt-419',
+        en: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp0Y1RjU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US:en'
+      }}
+    ];
+
+    const TRENDS_PT = ['Inteligência Artificial','Criptomoedas','Eleições','Mercado financeiro','Tecnologia','Clima','Esporte','Saúde','Ciência','Segurança digital'];
+    const TRENDS_EN = ['Artificial Intelligence','Cryptocurrency','Elections','Stock Market','Technology','Climate','Sports','Health','Science','Cybersecurity'];
+
+    function $(id) { return document.getElementById(id); }
+    function setStatus(msg) { $('status-line').textContent = msg; }
+
+    function tickClock() {
+      const now = new Date();
+      $('clock').textContent = now.toLocaleString(lang === 'pt' ? 'pt-BR' : 'en-US', {
+        weekday: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+
+    function renderCategories() {
+      const bar = $('category-bar');
+      bar.innerHTML = '';
+      CATS.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'cat-btn px-3 py-1.5 rounded-full text-xs font-bold border border-white/10 text-gray-300 hover:border-brand-500 transition' + (c.id === currentCat ? ' active' : '');
+        b.textContent = lang === 'pt' ? c.pt : c.en;
+        b.onclick = () => { currentCat = c.id; renderCategories(); loadNews(); };
+        bar.appendChild(b);
+      });
+    }
+
+    async function fetchText(url) {
+      const proxies = [
+        (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+        (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`
+      ];
+      let lastErr;
+      for (const make of proxies) {
+        try {
+          const r = await fetch(make(url), { cache: 'no-store' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return await r.text();
+        } catch (e) { lastErr = e; }
+      }
+      throw lastErr || new Error('fetch failed');
+    }
+
+    function parseRSS(xmlText) {
+      const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+      const items = [...doc.querySelectorAll('item')].slice(0, 24);
+      return items.map(item => {
+        const title = item.querySelector('title')?.textContent?.trim() || 'Sem título';
+        const link = item.querySelector('link')?.textContent?.trim()
+          || item.querySelector('guid')?.textContent?.trim() || '#';
+        const pubDate = item.querySelector('pubDate')?.textContent || '';
+        const source = item.querySelector('source')?.textContent
+          || item.querySelector('description')?.textContent?.replace(/<[^>]+>/g,'').slice(0, 80)
+          || 'News';
+        let desc = item.querySelector('description')?.textContent || '';
+        desc = desc.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
+        // try extract image
+        let img = '';
+        const enc = item.getElementsByTagName('media:content')[0]
+          || item.getElementsByTagName('media:thumbnail')[0]
+          || item.querySelector('enclosure');
+        if (enc) img = enc.getAttribute('url') || enc.getAttribute('href') || '';
+        const imgMatch = (item.querySelector('description')?.textContent || '').match(/src=["']([^"']+)["']/i);
+        if (!img && imgMatch) img = imgMatch[1];
+        return { title, link, pubDate, source, desc, img };
+      });
+    }
+
+    function timeAgo(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      const s = Math.floor((Date.now() - d.getTime()) / 1000);
+      if (s < 60) return lang === 'pt' ? 'agora' : 'now';
+      if (s < 3600) return Math.floor(s/60) + (lang === 'pt' ? ' min' : 'm');
+      if (s < 86400) return Math.floor(s/3600) + (lang === 'pt' ? ' h' : 'h');
+      return d.toLocaleDateString(lang === 'pt' ? 'pt-BR' : 'en-US');
+    }
+
+    async function loadNews(query) {
+      $('news-loading').style.display = 'block';
+      $('news-grid').innerHTML = '';
+      setStatus(lang === 'pt' ? 'Atualizando feeds…' : 'Updating feeds…');
+      try {
+        let url;
+        if (query && query.trim()) {
+          const q = encodeURIComponent(query.trim());
+          url = lang === 'pt'
+            ? `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`
+            : `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`;
+        } else {
+          const cat = CATS.find(c => c.id === currentCat) || CATS[0];
+          url = cat.rss[lang === 'pt' ? 'pt' : 'en'];
+        }
+        const xml = await fetchText(url);
+        const items = parseRSS(xml);
+        renderNews(items);
+        if (items[0]) {
+          $('breaking-line').innerHTML = `<a class="hover:text-brand-400 underline-offset-2 hover:underline" href="${items[0].link}" target="_blank" rel="noopener">${items[0].title}</a>`;
+        }
+        setStatus(lang === 'pt'
+          ? `Ao vivo · ${items.length} manchetes · ${new Date().toLocaleTimeString('pt-BR')}`
+          : `Live · ${items.length} headlines · ${new Date().toLocaleTimeString('en-US')}`);
+        $('feed-count').textContent = items.length + (lang === 'pt' ? ' artigos' : ' articles');
+      } catch (e) {
+        console.error(e);
+        $('news-grid').innerHTML = `<div class="col-span-2 glass-card rounded-xl p-6 text-sm text-red-300">
+          Falha ao carregar feeds (${e.message}). Tente Atualizar ou outro proxy/rede.
+        </div>`;
+        setStatus(lang === 'pt' ? 'Erro no feed — tente novamente' : 'Feed error — retry');
+      } finally {
+        $('news-loading').style.display = 'none';
+      }
+    }
+
+    function renderNews(items) {
+      const grid = $('news-grid');
+      grid.innerHTML = '';
+      if (!items.length) {
+        grid.innerHTML = `<p class="text-gray-500 text-sm col-span-2">Nenhum resultado.</p>`;
+        return;
+      }
+      items.forEach((it, i) => {
+        const card = document.createElement('article');
+        card.className = 'glass-card rounded-2xl p-4 flex flex-col gap-2 fade-in';
+        card.style.animationDelay = (i * 0.02) + 's';
+        const imgHtml = it.img
+          ? `<img class="news-img" src="${it.img}" alt="" loading="lazy" onerror="this.style.display='none'"/>`
+          : `<div class="news-img flex items-center justify-center text-gray-600"><i class="fas fa-newspaper text-2xl"></i></div>`;
+        card.innerHTML = `
+          ${imgHtml}
+          <div class="flex items-center justify-between gap-2 text-[11px] text-gray-500">
+            <span class="truncate font-semibold text-brand-400">${escapeHtml(it.source).slice(0,40)}</span>
+            <span>${timeAgo(it.pubDate)}</span>
+          </div>
+          <h3 class="font-bold text-sm leading-snug">
+            <a href="${it.link}" target="_blank" rel="noopener" class="hover:text-brand-400">${escapeHtml(it.title)}</a>
+          </h3>
+          <p class="text-xs text-gray-400 line-clamp-3 flex-1">${escapeHtml(it.desc)}</p>
+          <a href="${it.link}" target="_blank" rel="noopener" class="text-xs font-bold text-emerald-400 hover:underline mt-1">
+            ${lang === 'pt' ? 'Ler matéria →' : 'Read story →'}
+          </a>`;
+        grid.appendChild(card);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      })[c]);
+    }
+
+    async function loadMarkets() {
+      try {
+        const [fx, crypto] = await Promise.all([
+          fetch('https://api.frankfurter.app/latest?from=USD&to=BRL,EUR,GBP,JPY').then(r => r.json()),
+          fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,dogecoin&vs_currencies=usd,brl&include_24hr_change=true').then(r => r.json())
+        ]);
+        const rates = fx.rates || {};
+        const pairs = [
+          ['USD/BRL', rates.BRL],
+          ['USD/EUR', rates.EUR],
+          ['USD/GBP', rates.GBP],
+          ['USD/JPY', rates.JPY]
+        ];
+        $('market-cards').innerHTML = pairs.map(([n,v]) => `
+          <div class="flex justify-between glass-card rounded-lg px-3 py-2">
+            <span class="text-gray-400">${n}</span>
+            <strong>${v != null ? Number(v).toLocaleString(lang==='pt'?'pt-BR':'en-US',{maximumFractionDigits:4}) : '—'}</strong>
+          </div>`).join('');
+
+        const coins = [
+          ['Bitcoin','bitcoin'],
+          ['Ethereum','ethereum'],
+          ['Solana','solana'],
+          ['Dogecoin','dogecoin']
+        ];
+        $('crypto-cards').innerHTML = coins.map(([label,id]) => {
+          const c = crypto[id] || {};
+          const ch = c.usd_24h_change;
+          const cls = ch >= 0 ? 'up' : 'down';
+          const sign = ch >= 0 ? '+' : '';
+          return `<div class="flex justify-between glass-card rounded-lg px-3 py-2">
+            <span class="text-gray-400">${label}</span>
+            <span><strong>$${Number(c.usd||0).toLocaleString('en-US')}</strong>
+            <span class="${cls} text-xs ml-1">${ch!=null?sign+ch.toFixed(2)+'%':''}</span></span>
+          </div>`;
+        }).join('');
+
+        // ticker
+        const tickerParts = [];
+        pairs.forEach(([n,v]) => tickerParts.push(`<span class="ticker-item"><strong>${n}</strong> ${v!=null?Number(v).toFixed(4):'—'}</span>`));
+        coins.forEach(([label,id]) => {
+          const c = crypto[id] || {};
+          const ch = c.usd_24h_change;
+          const cls = ch >= 0 ? 'up' : 'down';
+          tickerParts.push(`<span class="ticker-item"><strong>${label}</strong> $${Number(c.usd||0).toLocaleString('en-US')} <span class="${cls}">${ch!=null?(ch>=0?'▲':'▼')+Math.abs(ch).toFixed(2)+'%':''}</span></span>`);
+        });
+        tickerParts.push(`<span class="ticker-item"><strong>ZICUTAKE</strong> NEWS LIVE · Elevbit/OpS</span>`);
+        const html = tickerParts.join('') + tickerParts.join('');
+        $('market-ticker').innerHTML = html;
+        $('market-updated').textContent = new Date().toLocaleTimeString(lang==='pt'?'pt-BR':'en-US');
+      } catch (e) {
+        console.error(e);
+        $('market-cards').innerHTML = `<p class="text-xs text-red-300">Mercados indisponíveis no momento.</p>`;
+      }
+    }
+
+    function loadTrends() {
+      const list = lang === 'pt' ? TRENDS_PT : TRENDS_EN;
+      $('trends-list').innerHTML = list.map((t,i) => `
+        <li>
+          <button class="w-full text-left glass-card rounded-lg px-3 py-2 hover:border-brand-500 flex gap-2 items-center"
+            data-trend="${escapeHtml(t)}">
+            <span class="text-brand-400 font-extrabold text-xs w-5">${i+1}</span>
+            <span>${escapeHtml(t)}</span>
+          </button>
+        </li>`).join('');
+      $('trends-list').querySelectorAll('button').forEach(btn => {
+        btn.onclick = () => {
+          $('search-input').value = btn.dataset.trend;
+          loadNews(btn.dataset.trend);
+        };
+      });
+    }
+
+    async function loadWiki(q) {
+      const query = (q || 'Artificial intelligence').trim();
+      $('wiki-panel').innerHTML = `<div class="loader-line"></div>`;
+      try {
+        const langCode = lang === 'pt' ? 'pt' : 'en';
+        const searchUrl = `https://${langCode}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`;
+        const s = await fetch(searchUrl).then(r => r.json());
+        const hit = s?.query?.search?.[0];
+        if (!hit) {
+          $('wiki-panel').innerHTML = `<p class="text-gray-500 text-xs">Sem resultados.</p>`;
+          return;
+        }
+        const title = hit.title;
+        const sumUrl = `https://${langCode}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+        const sum = await fetch(sumUrl).then(r => r.json());
+        $('wiki-panel').innerHTML = `
+          ${sum.thumbnail ? `<img src="${sum.thumbnail.source}" class="rounded-lg mb-2 max-h-32 object-cover w-full" alt=""/>` : ''}
+          <h3 class="font-bold text-base text-white">${escapeHtml(sum.title || title)}</h3>
+          <p class="text-xs text-gray-400 mb-2">${escapeHtml(sum.description || '')}</p>
+          <p class="text-sm text-gray-300 leading-relaxed" id="wiki-body">${escapeHtml(sum.extract || hit.snippet.replace(/<[^>]+>/g,''))}</p>
+          <a class="inline-block mt-2 text-xs font-bold text-brand-400 hover:underline" target="_blank" rel="noopener"
+            href="${sum.content_urls?.desktop?.page || `https://${langCode}.wikipedia.org/wiki/${encodeURIComponent(title)}`}">
+            Wikipedia completa →
+          </a>`;
+      } catch (e) {
+        $('wiki-panel').innerHTML = `<p class="text-red-300 text-xs">Erro Wikipedia: ${escapeHtml(e.message)}</p>`;
+      }
+    }
+
+    function applyLang() {
+      if (lang === 'pt') {
+        $('hero-title').textContent = 'Notícias globais em tempo real';
+        $('hero-sub').textContent = 'Ecossistema Zicutake · feeds ao vivo · mercados · Wikipedia · tendências. Criado por Joaquim Pedro de Morais Filho.';
+        $('feed-title').textContent = 'Feed de notícias';
+      } else {
+        $('hero-title').textContent = 'Global news in real time';
+        $('hero-sub').textContent = 'Zicutake ecosystem · live feeds · markets · Wikipedia · trends. By Joaquim Pedro de Morais Filho.';
+        $('feed-title').textContent = 'News feed';
+      }
+      renderCategories();
+      loadTrends();
+    }
+
+    function startAutoRefresh() {
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => {
+        loadNews($('search-input').value || undefined);
+        loadMarkets();
+      }, 90000);
+    }
+
+    // events
+    $('btn-refresh').onclick = () => { loadNews($('search-input').value || undefined); loadMarkets(); };
+    $('btn-lang').onclick = () => {
+      lang = lang === 'pt' ? 'en' : 'pt';
+      applyLang();
+      loadNews();
+      loadWiki($('wiki-input').value || (lang==='pt'?'Inteligência artificial':'Artificial intelligence'));
+    };
+    $('search-form').onsubmit = (e) => {
+      e.preventDefault();
+      loadNews($('search-input').value);
+    };
+    $('wiki-form').onsubmit = (e) => {
+      e.preventDefault();
+      loadWiki($('wiki-input').value);
+    };
+
+    // boot
+    applyLang();
+    tickClock();
+    setInterval(tickClock, 1000);
+    loadNews();
+    loadMarkets();
+    loadWiki(lang === 'pt' ? 'Inteligência artificial' : 'Artificial intelligence');
+    startAutoRefresh();
+  })();
+  </script>
+</body>
+</html>
