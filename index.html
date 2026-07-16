@@ -321,36 +321,83 @@ Watch-ZicutakeNews -Seconds 60</code></pre>
       });
     }
 
-    async function fetchText(url) {
+        async function fetchText(url) {
+      // 1) rss2json (JSON, often works without CORS pain)
+      try {
+        const jurl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(url) + '&count=24';
+        const r = await fetch(jurl, { cache: 'no-store' });
+        if (r.ok) {
+          const j = await r.json();
+          if (j && j.status === 'ok' && Array.isArray(j.items) && j.items.length) {
+            return { __jsonItems: j.items, __feedTitle: (j.feed && j.feed.title) || 'News' };
+          }
+        }
+      } catch (e) { /* continue */ }
+
       const proxies = [
-        (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-        (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`
+        (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+        (u) => 'https://corsproxy.io/?' + encodeURIComponent(u),
+        (u) => 'https://api.allorigins.win/get?url=' + encodeURIComponent(u)
       ];
       let lastErr;
       for (const make of proxies) {
         try {
           const r = await fetch(make(url), { cache: 'no-store' });
           if (!r.ok) throw new Error('HTTP ' + r.status);
-          return await r.text();
+          let text = await r.text();
+          // allorigins /get wraps JSON
+          if (text.trim().startsWith('{') && text.includes('"contents"')) {
+            try {
+              const wrapped = JSON.parse(text);
+              if (wrapped.contents) text = wrapped.contents;
+            } catch (_) {}
+          }
+          if (text && text.length > 100) return text;
         } catch (e) { lastErr = e; }
       }
       throw lastErr || new Error('fetch failed');
     }
 
-    function parseRSS(xmlText) {
-      const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
-      const items = [...doc.querySelectorAll('item')].slice(0, 24);
-      return items.map(item => {
+        function parseRSS(xmlText) {
+      // JSON path from rss2json
+      if (xmlText && typeof xmlText === 'object' && xmlText.__jsonItems) {
+        return xmlText.__jsonItems.map(it => {
+          let source = (xmlText.__feedTitle || 'News');
+          const t = (it.title || '').trim();
+          const m = t.match(/\s-\s([^-]+)$/);
+          if (m) source = m[1].trim();
+          return {
+            title: t || 'Sem título',
+            link: it.link || it.url || '#',
+            pubDate: it.pubDate || it.published || '',
+            source: source,
+            desc: (it.description || it.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180),
+            img: (it.thumbnail || it.enclosure?.link || '')
+          };
+        });
+      }
+
+      const doc = new DOMParser().parseFromString(String(xmlText), 'text/xml');
+      const parseErr = doc.querySelector('parsererror');
+      if (parseErr) throw new Error('XML inválido');
+      let nodes = [...doc.querySelectorAll('item')];
+      if (!nodes.length) nodes = [...doc.querySelectorAll('entry')];
+      return nodes.slice(0, 24).map(item => {
         const title = item.querySelector('title')?.textContent?.trim() || 'Sem título';
-        const link = item.querySelector('link')?.textContent?.trim()
-          || item.querySelector('guid')?.textContent?.trim() || '#';
-        const pubDate = item.querySelector('pubDate')?.textContent || '';
-        const source = item.querySelector('source')?.textContent
-          || item.querySelector('description')?.textContent?.replace(/<[^>]+>/g,'').slice(0, 80)
-          || 'News';
-        let desc = item.querySelector('description')?.textContent || '';
+        let link = item.querySelector('link')?.textContent?.trim() || '';
+        if (!link) {
+          const linkEl = item.querySelector('link');
+          if (linkEl) link = linkEl.getAttribute('href') || '';
+        }
+        if (!link) link = item.querySelector('guid')?.textContent?.trim() || '#';
+        const pubDate = item.querySelector('pubDate')?.textContent
+          || item.querySelector('updated')?.textContent || '';
+        let source = item.querySelector('source')?.textContent || 'News';
+        const tm = title.match(/\s-\s([^-]+)$/);
+        if (tm) source = tm[1].trim();
+        let desc = item.querySelector('description')?.textContent
+          || item.querySelector('summary')?.textContent || '';
         desc = desc.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
-        // try extract image
         let img = '';
         const enc = item.getElementsByTagName('media:content')[0]
           || item.getElementsByTagName('media:thumbnail')[0]
@@ -378,18 +425,33 @@ Watch-ZicutakeNews -Seconds 60</code></pre>
       $('news-grid').innerHTML = '';
       setStatus(lang === 'pt' ? 'Atualizando feeds…' : 'Updating feeds…');
       try {
-        let url;
+        let urls = [];
         if (query && query.trim()) {
           const q = encodeURIComponent(query.trim());
-          url = lang === 'pt'
-            ? `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`
-            : `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`;
+          urls = [
+            'https://news.google.com/rss/search?q=' + q + '&hl=en-US&gl=US&ceid=US:en',
+            'https://news.google.com/rss/search?q=' + q + '&hl=pt-BR&gl=BR&ceid=BR:pt-419',
+            'https://hnrss.org/newest?q=' + q
+          ];
         } else {
           const cat = CATS.find(c => c.id === currentCat) || CATS[0];
-          url = cat.rss[lang === 'pt' ? 'pt' : 'en'];
+          urls = [
+            cat.rss[lang === 'pt' ? 'pt' : 'en'],
+            cat.rss[lang === 'pt' ? 'en' : 'pt'],
+            'https://feeds.bbci.co.uk/news/world/rss.xml',
+            'https://hnrss.org/frontpage'
+          ];
         }
-        const xml = await fetchText(url);
-        const items = parseRSS(xml);
+        let items = [];
+        let lastErr = null;
+        for (const url of urls) {
+          try {
+            const xml = await fetchText(url);
+            items = parseRSS(xml);
+            if (items && items.length) break;
+          } catch (e) { lastErr = e; }
+        }
+        if (!items.length) throw lastErr || new Error('Nenhum feed respondeu');
         renderNews(items);
         if (items[0]) {
           $('breaking-line').innerHTML = `<a class="hover:text-brand-400 underline-offset-2 hover:underline" href="${items[0].link}" target="_blank" rel="noopener">${items[0].title}</a>`;

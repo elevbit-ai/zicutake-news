@@ -52,3 +52,30 @@ Open-ZicutakeNews
 
 © 2026 Joaquim Pedro de Morais Filho · Zicutake · Elevbit / OpS  
 Todos os direitos reservados, salvo indicação em contrário.
+
+## CMD (Windows) � acesso com comando
+
+Abra o **Prompt de Comando** e rode:
+
+```bat
+cd /d E:\Programas\_zicutake_news
+zicutake.cmd test
+zicutake.cmd news
+zicutake.cmd tech
+zicutake.cmd markets
+zicutake.cmd coins
+zicutake.cmd search inteligencia artificial
+zicutake.cmd wiki Brazil
+zicutake.cmd all
+zicutake.cmd web
+zicutake.cmd menu
+```
+
+Atalho global (ap�s instalar em %USERPROFILE%\bin):
+
+```bat
+zicutake news
+zicutake test
+```
+
+Feeds usam **fallback autom�tico** (Google News ? BBC ? NYT ? Reddit/HN) se um falhar.
